@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  bot:
+    build: .
+    command: bash -c "python main.py"
+    container_name: "tg"
+    restart: "unless-stopped"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: "redis:8.0.2-alpine"
+    container_name: "redis"
+    restart: "always"
+    expose:
+      - ${REDIS_PORT}
