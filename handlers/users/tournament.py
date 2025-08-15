@@ -2,7 +2,7 @@ from datetime import datetime
 
 from aiogram import types
 
-from loader import dp
+from loader import dp, config
 from keyboards.inline.tournament import (
     get_tournament_keyboard,
     get_tournaments
@@ -16,7 +16,7 @@ async def tournament(call: types.CallbackQuery) -> None:
     response = await api_client.get_tournaments(params={'is_finished': False})
     if not response or not response.json().get('results', []):
         text = 'Нет активных турниров'
-        await call.message.edit_text(text=text, reply_markup=get_menu_keyboard(with_team=True))
+        await call.message.edit_text(text=text, reply_markup=get_menu_keyboard(with_team=True, channel_url=config.other.channel_url))
         return
 
     text = 'Список активных турниров:'
@@ -57,13 +57,13 @@ async def join_tournament(call: types.CallbackQuery):
                                                          data={'confirmed_at': datetime.now()})
             text = '✅ Вы подтвердили участие в турнире'
             await call.answer(text=text, show_alert=True)
-            await call.message.edit_text(text='Меню', reply_markup=get_menu_keyboard(with_team=True))
+            await call.message.edit_text(text='Меню', reply_markup=get_menu_keyboard(with_team=True, channel_url=config.other.channel_url))
             return
         elif response and not response.json().get('results', []):
             await api_client.create_tournament_players(data={'tournament': tournament_id, 'player': player_id, 'confirmed_at': datetime.now()})
             text = '✅ Вы подтвердили участие в турнире'
             await call.answer(text=text, show_alert=True)
-            await call.message.edit_text(text='Меню', reply_markup=get_menu_keyboard(with_team=True))
+            await call.message.edit_text(text='Меню', reply_markup=get_menu_keyboard(with_team=True, channel_url=config.other.channel_url))
             return
 
-    await call.message.edit_text(text='Что-то пошло не так...', reply_markup=get_menu_keyboard(with_team=True))
+    await call.message.edit_text(text='Что-то пошло не так...', reply_markup=get_menu_keyboard(with_team=True, channel_url=config.other.channel_url))

@@ -23,10 +23,17 @@ class API:
 
 
 @dataclass
+class Other:
+    agreement_url: str = ''
+    channel_url: str = ''
+
+
+@dataclass
 class Config:
     bot: Bot
     redis: Redis
     api: API
+    other: Other
 
 
 def load_config() -> Config:
@@ -45,4 +52,8 @@ def load_config() -> Config:
             url=os.getenv('API_URL', ''),
             token=os.getenv('API_TOKEN', ''),
         ),
+        other=Other(
+            agreement_url=os.getenv('AGREEMENT_URL', ''),
+            channel_url=os.getenv('CHANNEL_URL', ''),
+        )
     )

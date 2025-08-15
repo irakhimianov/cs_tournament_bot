@@ -30,7 +30,7 @@ async def cmd_agreement(call: types.CallbackQuery) -> None:
         text = 'Что-то пошло не так, попробуйте еще раз'
         reply_markup = get_agreement_keyboard()
     else:
-        text = 'Добро пожаловать!\nЗаполните анкету:'
+        text = 'Добро пожаловать! Заполните анкету:'
         reply_markup = get_start_questionnaire_keyboard()
     await call.message.edit_text(text=text, reply_markup=reply_markup)
 
@@ -220,6 +220,10 @@ async def questionnaire_faceit_url(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=states.Questionnaire.faceit_level)
 async def questionnaire_faceit_level(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        text = 'Некорректное значение. Допускаются числовые значения. Попробуйте еще раз'
+        return await message.answer(text=text, reply_markup=get_cancel_keyboard())
+
     async with state.proxy() as data:
         data['faceit_level'] = message.text
         request_data = {k: v for k, v in data.items()}
@@ -231,6 +235,7 @@ async def questionnaire_faceit_level(message: types.Message, state: FSMContext):
         player_id = results[0].get('id')
 
     if player_id:
+        request_data |= {'questioned_at': datetime.now()}
         await api_client.edit_player(player_id=player_id, data=request_data)
 
     text = 'Анкета отправлена на проверку'
