@@ -1,5 +1,6 @@
 from aiogram import types
 from aiogram.utils.markdown import hlink
+from aiogram.dispatcher.storage import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
 
 from loader import dp, config
@@ -7,20 +8,19 @@ from keyboards.inline.tournament_register import get_agreement_keyboard, get_sta
 from keyboards.inline.menu import get_menu_keyboard
 
 
-@dp.message_handler(CommandStart())
-async def cmd_start(message: types.Message) -> None:
+@dp.message_handler(CommandStart(), state='*')
+async def cmd_start(message: types.Message, state: FSMContext) -> None:
+    await state.reset_state(with_data=True)
+
     registry_service = dp['registry_service']
     is_agreed = await registry_service.is_agreed(message.from_user.id)
     is_verified = await registry_service.is_verified(message.from_user.id)
-    with_team = await registry_service.with_team(message.from_user.id)
     is_admin = await registry_service.is_admin(message.from_user.id)
     is_questioned = await registry_service.is_questioned(message.from_user.id)
 
     if is_admin or (is_questioned and is_agreed and is_verified):
         text = 'Меню:'
         reply_markup = get_menu_keyboard(channel_url=config.other.channel_url)
-        if with_team:
-            reply_markup = get_menu_keyboard(with_team=True, channel_url=config.other.channel_url)
     elif not is_agreed:
         text = 'Ознакомьтесь с правилами турнира'
         if agreement_url := config.other.agreement_url:
@@ -36,10 +36,7 @@ async def cmd_start(message: types.Message) -> None:
     await message.answer(text=text, reply_markup=reply_markup)
 
 
-@dp.callback_query_handler(text='menu')
+@dp.callback_query_handler(text='menu', state='*')
 async def menu(call: types.CallbackQuery):
-    registry_service = dp['registry_service']
-    with_team = await registry_service.with_team(call.from_user.id)
     text = 'Меню:'
-    await call.message.edit_text(text=text, reply_markup=get_menu_keyboard(with_team=with_team,
-                                                                           channel_url=config.other.channel_url))
+    await call.message.edit_text(text=text, reply_markup=get_menu_keyboard(channel_url=config.other.channel_url))

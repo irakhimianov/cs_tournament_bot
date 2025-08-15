@@ -41,12 +41,12 @@ def load_config() -> Config:
 
     return Config(
         bot=Bot(
-            token=os.getenv('TOKEN', ''),
+            token=os.getenv('BOT_TOKEN', ''),
         ),
         redis=Redis(
             host=os.getenv('REDIS_HOST', ''),
             port=int(os.getenv('REDIS_PORT', '6379')),
-            db=int(os.getenv('REDIS_DB', '5')),
+            db=int(os.getenv('REDIS_BOT_DB', '5')),
         ),
         api=API(
             url=os.getenv('API_URL', ''),

@@ -5,7 +5,6 @@ from aiogram.dispatcher.storage import FSMContext
 from aiogram.types import ContentType
 
 import consts
-import filters
 import states
 from loader import dp
 from keyboards.inline.cancel import get_cancel_keyboard
@@ -43,7 +42,7 @@ async def questionnaire_name(call: types.CallbackQuery):
         await states.Questionnaire.team.set()
 
     text = 'Ваше имя:'
-    await call.message.edit_text(text=text, reply_markup=get_cancel_keyboard())
+    await call.message.edit_text(text=text)
 
 
 @dp.message_handler(state=states.Questionnaire.contact)
@@ -53,7 +52,7 @@ async def questionnaire_contact(message: types.Message, state: FSMContext):
 
     text = 'Отправьте контактные данные'
     await message.answer(text=text, reply_markup=get_contact_keyboard())
-    await states.Questionnaire.sphere_work.set()
+    await states.Questionnaire.contact_data.set()
 
 
 @dp.message_handler(state=states.Questionnaire.team)
@@ -69,7 +68,7 @@ async def questionnaire_team(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text='create_team', state=states.Questionnaire.team_interact)
 async def questionnaire_team_interact_create(call: types.CallbackQuery):
     text = 'Введите название команды'
-    await call.message.edit_text(text=text, reply_markup=get_cancel_keyboard())
+    await call.message.edit_text(text=text)
     await states.Questionnaire.create_team.set()
 
 
@@ -80,7 +79,7 @@ async def questionnaire_create_team(message: types.Message):
     resp = await api_client.get_teams(params={'name': name})
     if resp.json().get('results'):
         text = 'Команда с таким именем уже существует. Придумайте другое имя'
-        await message.answer(text=text, reply_markup=get_cancel_keyboard())
+        await message.answer(text=text)
         return
 
     player_id = None
@@ -102,7 +101,7 @@ async def questionnaire_team_interact_join(call: types.CallbackQuery):
         'Уточните у создателя команды пригласительный код. Найти пригласительный код можно в главном меню - '
         'кнопка о команде и отправьте его следующим сообщением. Например, код: 123456'
     )
-    await call.message.edit_text(text=text, reply_markup=get_cancel_keyboard())
+    await call.message.edit_text(text=text)
     await states.Questionnaire.join_team.set()
 
 
@@ -112,7 +111,7 @@ async def questionnaire_join_team(message: types.Message):
     resp = await api_client.get_teams(params={'invite_code': message.text})
     if not resp or not resp.json().get('results'):
         text = 'Команда с таким пригласительным кодом не найдена. Попробуйте ввести другой код:'
-        await message.answer(text=text, reply_markup=get_cancel_keyboard())
+        await message.answer(text=text)
         return
 
     team_id = None
@@ -140,15 +139,14 @@ async def questionnaire_looking_team(call: types.CallbackQuery):
 
 
 @dp.message_handler(content_types=ContentType.CONTACT, state=states.Questionnaire.contact_data)
-@dp.message_handler(state=states.Questionnaire.contact_data)
-async def questionnaire_message_sphere_work(message: types.Message, state: FSMContext):
+async def questionnaire_message_team_interact(message: types.Message, state: FSMContext):
     if contact := message.contact:
         async with state.proxy() as data:
             data['contact'] = contact.phone_number
 
-    text = 'С чем вы работаете?'
-    await message.answer(text=text, reply_markup=get_sphere_work_keyboard())
-    await states.Questionnaire.sphere_work.set()
+    text = 'Есть ли CS команда?'
+    await message.answer(text=text, reply_markup=get_team_interaction_keyboard())
+    await states.Questionnaire.team_interact.set()
 
 
 @dp.callback_query_handler(text_contains='sphere_work_', state=states.Questionnaire.sphere_work)
@@ -188,7 +186,7 @@ async def questionnaire_vertical_work(call: types.CallbackQuery, state: FSMConte
         async with state.proxy() as data:
             data['vertical_work'] = consts.vertical_work_choices.get(call.data, '')
 
-    await call.message.edit_text(text=text, reply_markup=get_cancel_keyboard())
+    await call.message.edit_text(text=text)
 
 
 @dp.message_handler(state=states.Questionnaire.vertical_work_other)
@@ -196,7 +194,7 @@ async def questionnaire_vertical_work_other(message: types.Message, state: FSMCo
     async with state.proxy() as data:
         data['vertical_work'] = f'Другое: {message.text}'
     text = 'Ссылка на Steam профиль:'
-    await message.answer(text=text, reply_markup=get_cancel_keyboard())
+    await message.answer(text=text)
     await states.Questionnaire.steam_url.set()
 
 
@@ -205,7 +203,7 @@ async def questionnaire_steam_url(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['steam_url'] = message.text
     text = 'Ссылка на FaceIT:'
-    await message.answer(text=text, reply_markup=get_cancel_keyboard())
+    await message.answer(text=text)
     await states.Questionnaire.faceit_url.set()
 
 
@@ -214,7 +212,7 @@ async def questionnaire_faceit_url(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['faceit_url'] = message.text
     text = 'Уровень на FaceIT:'
-    await message.answer(text=text, reply_markup=get_cancel_keyboard())
+    await message.answer(text=text)
     await states.Questionnaire.faceit_level.set()
 
 
@@ -222,7 +220,7 @@ async def questionnaire_faceit_url(message: types.Message, state: FSMContext):
 async def questionnaire_faceit_level(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
         text = 'Некорректное значение. Допускаются числовые значения. Попробуйте еще раз'
-        return await message.answer(text=text, reply_markup=get_cancel_keyboard())
+        return await message.answer(text=text)
 
     async with state.proxy() as data:
         data['faceit_level'] = message.text

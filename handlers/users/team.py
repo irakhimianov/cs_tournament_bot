@@ -1,8 +1,6 @@
 from aiogram import types
-from aiogram.dispatcher.filters.builtin import CommandStart
 
 from loader import dp
-from keyboards.inline.menu import get_menu_keyboard
 from keyboards.inline.back import get_back_keyboard
 
 
